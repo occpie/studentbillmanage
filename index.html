@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0d14" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Patna YT Academy – Billing Manager</title>
+  <meta name="description"
+    content="Manage student billing and payments for Patna YT Academy. Track pending and completed payments, add students, and send automatic email notifications." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- ── TOAST ── -->
+  <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+  <!-- ── AUTHENTICATION OVERLAY ── -->
+  <div id="authOverlay" class="modal-overlay active" role="dialog">
+    <!-- Initial Splash State -->
+    <div id="authSplash" class="splash-box">
+      <div class="logo-icon animate-pulse" style="font-size: 3rem; margin-bottom: 1.5rem;">▶</div>
+      <h3>Verifying Identity...</h3>
+      <p class="hint-text" style="font-size: 0.85rem; border:none; background:none;">Preparing your secure billing
+        environment</p>
+      <div class="spinner"
+        style="width: 24px; height: 24px; border-width: 3px; border-top-color: var(--purple-400); margin: 0 auto;">
+      </div>
+    </div>
+
+    <!-- Auth Card (Hidden while checking) -->
+    <div id="authCard" class="modal-box hidden" style="text-align: center; max-width: 400px;">
+      <div class="logo-icon"
+        style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary); display: flex; justify-content: center;">▶
+      </div>
+      <h2 style="margin-bottom: 0.5rem;">Welcome to Patna YT Academy</h2>
+      <p class="hint-text" style="margin-bottom: 1rem;">Sign in to manage student billing and track payments.</p>
+      <div style="background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.25); border-radius: 10px; padding: 10px 14px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px; text-align: left;">
+        <span style="font-size: 1.2rem;">☁️</span>
+        <span style="font-size: 0.78rem; color: var(--green-400); line-height: 1.4;">
+          <strong>Your data is always safe.</strong> All student records are saved in the cloud — sign in to restore them anytime.
+        </span>
+      </div>
+
+      <form id="authForm" onsubmit="return false;" style="margin-bottom: 1.5rem;">
+        <div class="form-group" style="text-align: left;">
+          <label for="authEmail">Email Address</label>
+          <input id="authEmail" type="email" placeholder="you@example.com" required style="margin-bottom: 1rem;" />
+        </div>
+        <div class="form-group" style="text-align: left;">
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" placeholder="••••••••" required />
+        </div>
+
+        <div id="signInActions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button id="signInBtn" class="btn btn-primary" style="flex: 1;">Sign In</button>
+          <button id="signUpToggleBtn" class="btn btn-ghost" style="flex: 1;" type="button">Sign Up</button>
+        </div>
+
+        <div id="signUpFields" style="display: none;">
+          <div class="form-group" style="text-align: left;">
+            <label for="authName">Full Name</label>
+            <input id="authName" type="text" placeholder="Rahul Kumar" style="margin-bottom: 1rem;" />
+          </div>
+          <div class="form-group" style="text-align: left;">
+            <label for="authAvatar">Profile Picture (Optional)</label>
+            <input id="authAvatar" type="file" accept="image/*" style="margin-bottom: 1rem;" />
+          </div>
+          <button id="doSignUpBtn" class="btn btn-primary" style="width: 100%;" type="button">Create Account</button>
+          <button id="backToSignInBtn" class="btn btn-ghost" style="width: 100%; margin-top: 10px;" type="button">Back
+            to Sign In</button>
+        </div>
+
+        <p id="authError" class="field-err" style="margin-top: 1rem; display: block;"></p>
+      </form>
+
+      <div style="display: flex; align-items: center; margin: 1.5rem 0;">
+        <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+        <span style="padding: 0 10px; color: var(--text-muted); font-size: 0.85rem;">OR</span>
+        <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+      </div>
+
+      <button id="googleSignInBtn" class="btn btn-ghost"
+        style="width: 100%; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+        <div id="googleLoading" class="spinner hidden" style="width: 16px; height: 16px; border-width: 2px;"></div>
+        <svg id="googleLogo" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            fill="#4285F4" />
+          <path
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            fill="#34A853" />
+          <path
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            fill="#FBBC05" />
+          <path
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            fill="#EA4335" />
+        </svg>
+        <span id="googleBtnLabel">Sign in with Google</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ── CONFIRM MODAL ── -->
+  <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-box confirm-box">
+      <div class="confirm-icon">🗑️</div>
+      <h3 id="confirmTitle">Delete Student?</h3>
+      <p id="confirmMsg">This action cannot be undone.</p>
+      <div class="modal-footer">
+        <button id="confirmCancelBtn" class="btn btn-ghost">Cancel</button>
+        <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STUDENT MODAL ── -->
+  <div id="studentModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add Student</h2>
+        <button id="closeModal" class="icon-btn" aria-label="Close modal">✕</button>
+      </div>
+      <form id="studentForm" autocomplete="off" novalidate>
+        <input type="hidden" id="studentId" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="studentName">Full Name <span class="req">*</span></label>
+            <input id="studentName" type="text" placeholder="e.g. Rahul Kumar" required />
+            <span class="field-err" id="err-name"></span>
+          </div>
+          <div class="form-group">
+            <label for="studentPhone">Phone Number <span class="req">*</span></label>
+            <input id="studentPhone" type="tel" placeholder="e.g. 9876543210" required />
+            <span class="field-err" id="err-phone"></span>
+          </div>
+          <div class="form-group form-group--full">
+            <label for="studentEmail">Email Address <span class="req">*</span></label>
+            <input id="studentEmail" type="email" placeholder="e.g. rahul@email.com" required />
+            <span class="field-err" id="err-email"></span>
+          </div>
+          <div class="form-group">
+            <label for="admissionDate">Admission Date</label>
+            <input id="admissionDate" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="courseFee">Course Fee (₹) <span class="req">*</span></label>
+            <input id="courseFee" type="number" min="0" placeholder="e.g. 5000" required />
+            <span class="field-err" id="err-fee"></span>
+          </div>
+          <div class="form-group">
+            <label for="paidAmount">Amount Paid (₹)</label>
+            <input id="paidAmount" type="number" min="0" placeholder="e.g. 2000" value="0" />
+          </div>
+          <div class="form-group">
+            <label for="courseName">Course / Batch</label>
+            <div class="course-select-wrap">
+              <select id="courseName" aria-label="Select course">
+                <option value="">— Select a course —</option>
+              </select>
+              <button type="button" id="quickAddCourseBtn" class="icon-btn course-add-btn"
+                title="Add / Manage Courses">＋</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Payment Status <span class="auto-label">(auto)</span></label>
+            <div class="status-auto-display" id="statusAutoDisplay">
+              <span class="status-pill status-pending" id="statusAutoBadge">
+                <span class="status-dot"></span> Pending
+              </span>
+              <span class="status-auto-hint" id="statusAutoHint">Enter fee &amp; paid amount above</span>
+            </div>
+            <input type="hidden" id="paymentStatus" value="pending" />
+          </div>
+          <div class="form-group form-group--full">
+            <label for="notes">Notes</label>
+            <textarea id="notes" rows="2" placeholder="Any additional notes…"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancelFormBtn" class="btn btn-ghost">Cancel</button>
+          <button type="button" id="saveDraftBtn" class="btn btn-draft">📝 Save Draft</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <span id="submitLabel">Add Student</span>
+            <span id="submitSpinner" class="spinner hidden"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── VIEW MODAL ── -->
+  <div id="viewModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+    <div class="modal-box view-box">
+      <div class="modal-header">
+        <h2 id="viewTitle">Student Details</h2>
+        <button id="closeViewModal" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <div id="viewContent"></div>
+      <div class="modal-footer">
+        <button id="viewDownloadBtn" class="btn btn-ghost">📥 Download Invoice</button>
+        <button id="viewEditBtn" class="btn btn-primary">Edit Details</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL OVERLAY (pending / completed list) ── -->
+  <div id="panelOverlay" class="panel-overlay">
+    <div class="side-panel" id="sidePanel">
+      <div class="panel-header">
+        <h3 id="panelTitle">Students</h3>
+        <button id="closePanelBtn" class="icon-btn" aria-label="Close panel">✕</button>
+      </div>
+      <div id="panelList" class="panel-list"></div>
+    </div>
+  </div>
+
+  <!-- ── EMAIL CONFIG MODAL ── -->
+  <div id="emailConfigModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="emailConfigTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="emailConfigTitle">⚙️ Email Settings</h2>
+        <button id="closeEmailConfig" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <p class="hint-text">Configure EmailJS to send automatic billing emails to students. <a
+          href="https://www.emailjs.com/" target="_blank" rel="noopener">Get your keys at emailjs.com →</a></p>
+      <div class="form-grid">
+        <div class="form-group form-group--full">
+          <label for="ejPublicKey">EmailJS Public Key <span class="req">*</span></label>
+          <input id="ejPublicKey" type="text" placeholder="your_public_key" />
+        </div>
+        <div class="form-group form-group--full">
+          <label for="ejServiceId">Service ID <span class="req">*</span></label>
+          <input id="ejServiceId" type="text" placeholder="service_xxxxxxx" />
+        </div>
+        <div class="form-group form-group--full">
+          <label for="ejTemplateId">Template ID <span class="req">*</span></label>
+          <input id="ejTemplateId" type="text" placeholder="template_xxxxxxx" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelEmailConfig" class="btn btn-ghost">Cancel</button>
+        <button id="saveEmailConfig" class="btn btn-primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MANAGE COURSES MODAL ── -->
+  <div id="courseModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="courseModalTitle">
+    <div class="modal-box course-modal-box">
+      <div class="modal-header">
+        <h2 id="courseModalTitle">🎬 Manage Courses</h2>
+        <button id="closeCourseModal" class="icon-btn" aria-label="Close">✕</button>
+      </div>
+      <p class="hint-text">Add or remove course / batch names that appear in the student form dropdown.</p>
+      <div class="course-add-row">
+        <input id="newCourseName" type="text" placeholder="e.g. YouTube Pro Batch 4" maxlength="80" />
+        <button id="addCourseBtn" class="btn btn-primary btn-sm">Add Course</button>
+      </div>
+      <ul id="courseList" class="course-list"></ul>
+      <div class="modal-footer">
+        <button id="closeCourseModalFooter" class="btn btn-ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════ MAIN APP ════════════════ -->
+  <div class="app-wrapper">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="logo-group">
+          <div class="logo-icon">▶</div>
+          <div>
+            <h1 class="app-title">Patna YT Academy</h1>
+            <p class="app-subtitle">Student Billing Manager</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="openCoursesBtn" class="btn btn-ghost btn-sm" title="Manage Courses">
+            🎬 Courses
+          </button>
+          <button id="openEmailConfigBtn" class="btn btn-ghost btn-sm" title="Email Settings">
+            ⚙️ Email Settings
+          </button>
+          <button id="openAddStudentBtn" class="btn btn-primary btn-sm">
+            <span>＋</span> Add Student
+          </button>
+          <div id="userInfo" class="hidden" style="display: flex; align-items: center; gap: 8px; margin-left: 15px;">
+            <img id="userAvatar" src="" alt="avatar"
+              style="width: 28px; height: 28px; border-radius: 50%; display: none;" />
+            <span id="userNameDisplay" style="font-size: 0.9rem; font-weight: 500; color: var(--text-primary);"></span>
+          </div>
+          <button id="signOutBtn" class="btn btn-ghost btn-sm hidden" style="margin-left: 10px;" title="Sign Out"
+            onclick="handleSignOut()">
+            🚪 Sign Out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- STATS CARDS -->
+    <section class="stats-section" aria-label="Payment summary">
+      <div class="stat-card stat-card--pending" id="pendingCard">
+        <div class="stat-body">
+          <span class="stat-label">Pending Payments</span>
+          <span class="stat-count" id="pendingCount">0</span>
+          <span class="stat-amount" id="pendingAmount">₹0 due</span>
+        </div>
+        <div class="stat-meta">
+          <span class="stat-badge badge--pending">Outstanding</span>
+          <button class="arrow-btn" id="pendingArrowBtn" aria-label="View pending students">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--completed" id="completedCard">
+        <div class="stat-body">
+          <span class="stat-label">Completed Payments</span>
+          <span class="stat-count" id="completedCount">0</span>
+          <span class="stat-amount" id="completedAmount">₹0 collected</span>
+        </div>
+        <div class="stat-meta">
+          <span class="stat-badge badge--completed">Cleared</span>
+          <button class="arrow-btn" id="completedArrowBtn" aria-label="View completed students">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--collected" id="collectedCard">
+        <div class="stat-body">
+          <span class="stat-label">Total Collected</span>
+          <span class="stat-count stat-count--collected" id="collectedCount">₹0</span>
+          <span class="stat-amount" id="collectedSub">across all students</span>
+        </div>
+        <div class="stat-meta">
+          <span class="stat-badge badge--collected">Revenue</span>
+          <div class="collected-icon">💰</div>
+        </div>
+      </div>
+
+      <div class="stat-card stat-card--draft" id="draftCard">
+        <div class="stat-body">
+          <span class="stat-label">Drafts</span>
+          <span class="stat-count" id="draftCount">0</span>
+          <span class="stat-amount" id="draftSub">incomplete entries</span>
+        </div>
+        <div class="stat-meta">
+          <span class="stat-badge badge--draft">Unsaved</span>
+          <button class="arrow-btn" id="draftArrowBtn" aria-label="View drafts">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+        <input id="searchInput" type="text" placeholder="Search students…" aria-label="Search students" />
+      </div>
+      <div class="filter-group">
+        <select id="filterStatus" aria-label="Filter by status">
+          <option value="all">All Students</option>
+          <option value="pending">Pending</option>
+          <option value="partial">Partial</option>
+          <option value="completed">Completed</option>
+          <option value="draft">Drafts</option>
+        </select>
+        <select id="sortBy" aria-label="Sort students">
+          <option value="date-desc">Newest First</option>
+          <option value="date-asc">Oldest First</option>
+          <option value="name-asc">Name A–Z</option>
+          <option value="name-desc">Name Z–A</option>
+          <option value="due-desc">Highest Due</option>
+        </select>
+        <button id="downloadPdfBtn" class="btn btn-ghost btn-sm" title="Download student list as PDF">
+          📄 Download PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- STUDENT TABLE -->
+    <main class="table-container" id="tableContainer">
+      <table class="student-table" id="studentTable" aria-label="Student billing list">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student</th>
+            <th>Phone</th>
+            <th>Course</th>
+            <th>Admission</th>
+            <th>Fee</th>
+            <th>Paid</th>
+            <th>Due</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="studentTableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state hidden">
+        <div class="empty-icon">🎓</div>
+        <h3>No students yet</h3>
+        <p>Click <strong>Add Student</strong> to get started.</p>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <span>Patna YT Academy © 2026</span>
+      <span id="totalStudentsFooter">0 students enrolled</span>
+    </footer>
+  </div>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
